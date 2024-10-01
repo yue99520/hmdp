@@ -1,0 +1,7 @@
+FROM mysql:5.7
+
+ENV MYSQL_ROOT_PASSWORD=yue99520
+
+COPY db/hmdp.sql /docker-entrypoint-initdb.d/
+
+CMD ["mysqld"]
