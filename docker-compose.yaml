@@ -27,6 +27,16 @@ services:
     networks:
       - app-network
 
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.hmdp_nginx
+    container_name: hmdp-nginx
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

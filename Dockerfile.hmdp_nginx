@@ -1,0 +1,9 @@
+FROM nginx:latest
+
+COPY ./nginx/conf/nginx.conf /etc/nginx/nginx.conf
+
+COPY ./nginx/conf/mime.types /etc/nginx/mime.types
+
+COPY ./nginx/html/ /etc/nginx/html/
+
+EXPOSE 80
