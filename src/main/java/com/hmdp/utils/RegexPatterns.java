@@ -8,6 +8,7 @@ public abstract class RegexPatterns {
      * 手机号正则
      */
     public static final String PHONE_REGEX = "^1([38][0-9]|4[579]|5[0-3,5-9]|6[6]|7[0135678]|9[89])\\d{8}$";
+//    public static final String PHONE_REGEX = "(\\d{2,3}-?|\\(\\d{2,3}\\))\\d{3,4}-?\\d{4}|09\\d{2}(\\d{6}|-\\d{3}-\\d{3})";
     /**
      * 邮箱正则
      */
