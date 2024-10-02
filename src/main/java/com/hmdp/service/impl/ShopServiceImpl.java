@@ -35,6 +35,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     @Value("${cache.shop.ttl.seconds:120}")
     int cacheShopTtlSeconds;
 
+    @Value("${cache.shop.null.ttl.seconds:30}")
+    int cacheShopNullTtlSeconds;
+
     @Override
     public Result query(Long id) throws JsonProcessingException {
         String result = redisTemplate.opsForValue().get(CACHE_SHOP_KEY + id);
@@ -46,8 +49,16 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                 log.error("Failed to deserialize shop data for id: {}", id, e);
             }
         }
+        if (result != null) {
+            return Result.fail("Shop not found");
+        }
+
         Shop shop = getById(id);
         if (shop == null) {
+            redisTemplate.opsForValue().set(
+                    CACHE_SHOP_KEY + id,
+                    "",
+                    cacheShopNullTtlSeconds, TimeUnit.SECONDS);
             return Result.fail("Shop not found");
         }
         redisTemplate.opsForValue().set(
