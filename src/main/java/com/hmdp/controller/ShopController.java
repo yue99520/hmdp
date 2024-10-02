@@ -1,15 +1,30 @@
 package com.hmdp.controller;
 
 
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+
 import cn.hutool.core.util.StrUtil;
+import lombok.extern.slf4j.Slf4j;
+
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
 import com.hmdp.service.IShopService;
 import com.hmdp.utils.SystemConstants;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+
+import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
 
 /**
  * <p>
@@ -19,46 +34,46 @@ import javax.annotation.Resource;
  * @author 虎哥
  * @since 2021-12-22
  */
+@Slf4j
 @RestController
 @RequestMapping("/shop")
 public class ShopController {
 
-    @Resource
-    public IShopService shopService;
+    @Autowired
+    IShopService shopService;
 
     /**
      * 根据id查询商铺信息
+     *
      * @param id 商铺id
      * @return 商铺详情数据
      */
     @GetMapping("/{id}")
-    public Result queryShopById(@PathVariable("id") Long id) {
-        return Result.ok(shopService.getById(id));
+    public Result queryShopById(@PathVariable("id") Long id) throws JsonProcessingException {
+        return shopService.query(id);
     }
 
     /**
      * 新增商铺信息
+     *
      * @param shop 商铺数据
      * @return 商铺id
      */
     @PostMapping
     public Result saveShop(@RequestBody Shop shop) {
-        // 写入数据库
         shopService.save(shop);
-        // 返回店铺id
         return Result.ok(shop.getId());
     }
 
     /**
      * 更新商铺信息
+     *
      * @param shop 商铺数据
      * @return 无
      */
     @PutMapping
     public Result updateShop(@RequestBody Shop shop) {
-        // 写入数据库
-        shopService.updateById(shop);
-        return Result.ok();
+        return shopService.update(shop);
     }
 
     /**

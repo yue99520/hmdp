@@ -15,12 +15,16 @@ import com.hmdp.utils.RegexUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpSession;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -44,16 +48,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private ObjectMapper mapper;
+
     @Value("${user.login.code.expiration.seconds:120}")
     public Integer USER_LOGIN_CODE_EXPIRATION_SECONDS;
 
     @Value("${user.login.token.expiration.seconds:36000}")
     public Integer USER_LOGIN_SESSION_EXPIRATION_SECONDS;
 
-    private ObjectMapper mapper = new ObjectMapper();
-
     /*
-     * 1. validate phone format 0912345678
+     * 1. validate phone format 09123456789001
      * 2. gen code
      * 3. save code to session
      * 4. send code
@@ -104,15 +109,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
         Map<String, String> userDTOMap = mapper.convertValue(userDTO, new TypeReference<Map<String, String>>() {});
 
-        byte[] key = (LOGIN_USER_KEY + token).getBytes();
-
-        stringRedisTemplate.execute((RedisCallback<Object>) connection -> {
-            connection.multi();
-            for (Map.Entry<String, String> entry : userDTOMap.entrySet()) {
-                connection.hSet(key, entry.getKey().getBytes(), entry.getValue().getBytes());
+        stringRedisTemplate.execute(new SessionCallback<List<Object>>() {
+            @Override
+            public <K, V> List<Object> execute(RedisOperations<K, V> operations) throws DataAccessException {
+                String key = LOGIN_USER_KEY + token;
+                stringRedisTemplate.multi();
+                stringRedisTemplate.opsForHash().putAll(key, userDTOMap);
+                stringRedisTemplate.expire(key, USER_LOGIN_SESSION_EXPIRATION_SECONDS, TimeUnit.SECONDS);
+                return stringRedisTemplate.exec();
             }
-            connection.expire(key, USER_LOGIN_SESSION_EXPIRATION_SECONDS);
-            return connection.exec();
         });
 
         return Result.ok(token);
