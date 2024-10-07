@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 
 import static com.hmdp.utils.RedisConstants.GLOBAL_ID_INCREMENT_KEY;
 
+/**
+ * @author Ernie Lee
+ */
 @Component
 public class GlobalIDGenerator {
 
