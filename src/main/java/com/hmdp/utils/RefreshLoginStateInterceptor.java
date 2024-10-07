@@ -15,6 +15,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hmdp.utils.SystemConstants.AUTHORIZATION_TOKEN_HEADER;
 
+/**
+ * @author Ernie Lee
+ * */
 @Component
 public class RefreshLoginStateInterceptor implements HandlerInterceptor {
 
