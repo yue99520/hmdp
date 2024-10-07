@@ -21,13 +21,17 @@ server will send a code (implemented by printing on the server console log) for 
 - Extendable session
   - The session will be extended by user continuously interacting with the server.
 
-### Caching shop APIs:
+### Caching on shop APIs:
 #### Introduction
 - User's shop query API results are cached in Redis, speeding up the response time.
-- When the shop data is updated, the cache is invalidated.
+- The cache is invalidated actively when the shop data is updated, the cache rebuilding is depending on the "Repair on Read" strategy.
 #### Selling Points
-- "Cache Penetration" protection
-  - The invalid or doesn't exist shop data will also be cached (in empty string) in a short time.
-- Proactive cache invalidation
-  - When the shop data is updated, the cache is invalidated.
-  - The cache rebuilding is depending on the "Repair on Read" strategy. 
+- Cache Penetration Protection
+  - The invalid or doesn't exist shop data will also be cached (in empty string) for a short time.
+- Three strategy for the cache rebuilding:
+
+| Strategy         | Description                                                   | Consistency | DB pressure    | Response efficiency |
+|------------------|---------------------------------------------------------------|-------------|----------------|---------------------|
+| simple           | no concurrency protection                                     | Higher      | Many in a time | Lower               |
+| mutex            | blocks threads using a mutex lock while rebuilding the cache  | Higher      | One in a time  | Lower               |
+| logic-expiration | returns old cache data and asynchronously rebuilds the cache  | Lower       | One in a time  | Higher              |
