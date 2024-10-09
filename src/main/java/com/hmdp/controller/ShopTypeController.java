@@ -83,10 +83,11 @@ public class ShopTypeController {
             Set<ZSetOperations.TypedTuple<String>> shopTypes = serializeShopTypes(typeList);
             redisTemplate.execute(new SessionCallback<List<Object>>() {
                 @Override
-                public <K, V> List<Object> execute(RedisOperations<K, V> operations) throws DataAccessException {
+                public <K, V> List<Object> execute(RedisOperations<K, V> redisOperations) throws DataAccessException {
+                    StringRedisTemplate operations = (StringRedisTemplate) redisOperations;
                     operations.multi();
-                    redisTemplate.opsForZSet().add(CACHE_SHOP_TYPE_KEY, shopTypes);
-                    redisTemplate.expire(CACHE_SHOP_TYPE_KEY, 30, TimeUnit.MINUTES);
+                    operations.opsForZSet().add(CACHE_SHOP_TYPE_KEY, shopTypes);
+                    operations.expire(CACHE_SHOP_TYPE_KEY, 30, TimeUnit.MINUTES);
                     return operations.exec();
                 }
             });
