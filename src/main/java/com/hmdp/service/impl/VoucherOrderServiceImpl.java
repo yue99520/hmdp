@@ -1,6 +1,7 @@
 package com.hmdp.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
@@ -54,7 +55,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         Long userId = UserHolder.getUser().getId();
         Lock lock = new SimpleRedisLock(LOCK_ORDER_KEY + ":" + userId, redisTemplate);
 
-        boolean locked = lock.tryLock(15);
+        boolean locked = lock.tryLock( 15);
         if (!locked) {
             return Result.fail("voucher order is processing");
         }
