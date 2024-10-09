@@ -10,34 +10,33 @@ import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.GlobalIDGenerator;
+import com.hmdp.utils.Lock;
+import com.hmdp.utils.SimpleRedisLock;
 import com.hmdp.utils.UserHolder;
 
+import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.hmdp.utils.RedisConstants.LOCK_ORDER_KEY;
+
 /**
- * <p>
- *  服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
+ * @author Ernie Lee
  */
 @Service
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
 
     @Autowired
-    private StringRedisTemplate redisTemplate;
+    private ISeckillVoucherService seckillVoucherService;
 
     @Autowired
-    private ISeckillVoucherService seckillVoucherService;
+    private StringRedisTemplate redisTemplate;
 
     @Autowired
     private GlobalIDGenerator globalIDGenerator;
 
-    @Transactional
     @Override
     public Result seckillVoucher(Long voucherId) {
         SeckillVoucher voucher = seckillVoucherService.getById(voucherId);
@@ -51,6 +50,30 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if (voucher.getStock() < 1) {
             return Result.fail("voucher is out of stock");
         }
+
+        Long userId = UserHolder.getUser().getId();
+        Lock lock = new SimpleRedisLock(LOCK_ORDER_KEY + ":" + userId, redisTemplate);
+
+        boolean locked = lock.tryLock(15);
+        if (!locked) {
+            return Result.fail("voucher order is processing");
+        }
+        try {
+            // Get the proxy object of the transactional method
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            return proxy.createVoucherOrder(userId, voucherId);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Transactional(timeout = 10)
+    public Result createVoucherOrder(Long userId, Long voucherId) {
+        int count = query().eq("user_id", userId).eq("voucher_id", voucherId).count();
+        if (count > 0) {
+            return Result.fail("user has already ordered this voucher");
+        }
+
         boolean success = seckillVoucherService.update()
                 .setSql("stock = stock - 1")
                 .eq("voucher_id", voucherId)

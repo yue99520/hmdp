@@ -7,7 +7,7 @@
       </elementProp>
     </TestPlan>
     <hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="API threads" enabled="true">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="API threads" enabled="false">
         <intProp name="ThreadGroup.num_threads">10000</intProp>
         <intProp name="ThreadGroup.ramp_time">5</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
@@ -70,7 +70,7 @@
             <stringProp name="filename"></stringProp>
           </ResultCollector>
           <hashTree/>
-          <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="彙整報告" enabled="true">
+          <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="彙整報告">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
             <objProp>
               <name>saveConfig</name>
@@ -217,7 +217,7 @@
               </elementProp>
               <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">Authorization</stringProp>
-                <stringProp name="Header.value">c9b37d65d06d4f0b863f9f551891eb0c</stringProp>
+                <stringProp name="Header.value">7abca0bbf1e64aeab608fc5ef867703b</stringProp>
               </elementProp>
             </collectionProp>
           </HeaderManager>

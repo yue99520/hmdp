@@ -14,7 +14,9 @@ import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.CacheResult;
+import com.hmdp.utils.Lock;
 import com.hmdp.utils.RedisData;
+import com.hmdp.utils.SimpleRedisLock;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,8 +95,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             return result.getData();
         }
 
+        Lock lock = new SimpleRedisLock(lockKey, redisTemplate);
         try {
-            boolean isLocked = tryLock(lockKey);
+            boolean isLocked = lock.tryLock(LOCK_SHOP_TTL);
             if (!isLocked) {
                 Thread.sleep(30);
                 return queryWithMutexRebuildStrategy(id);
@@ -110,13 +113,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
-            unlock(lockKey);
+            lock.unlock();
         }
     }
 
     private Shop queryWithLogicExpirationRebuildStrategy(Long id) throws JsonProcessingException {
         final String lockKey = LOCK_SHOP_KEY + id;
 
+        Lock lock = new SimpleRedisLock(lockKey, redisTemplate);
         CacheResult<RedisData<Shop>> result = queryFromCacheWithLogicalExpiration(id);
         if (result.isHit()) {
             if (result.getData().getExpireTime().isAfter(LocalDateTime.now())) {
@@ -124,7 +128,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             }
 
             // async rebuild
-            boolean isLocked = tryLock(lockKey);
+            boolean isLocked = lock.tryLock(LOCK_SHOP_TTL);
             if (isLocked) {
                 executorService.submit(() -> {
                     try {
@@ -137,7 +141,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     } finally {
-                        unlock(lockKey);
+                        lock.unlock();
                     }
                 });
             }
@@ -145,7 +149,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         }
 
         try {
-            boolean isLocked = tryLock(lockKey);
+            boolean isLocked = lock.tryLock(LOCK_SHOP_TTL);
             if (!isLocked) {
                 Thread.sleep(30);
                 return queryWithLogicExpirationRebuildStrategy(id);
@@ -162,7 +166,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
-            unlock(lockKey);
+            lock.unlock();
         }
     }
 
@@ -245,15 +249,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         }
         log.info("Cache rebuilt for shop id: {}", id);
         return shop;
-    }
-
-    private boolean tryLock(String key) {
-        Boolean result = redisTemplate.opsForValue().setIfAbsent(key, "1", LOCK_SHOP_TTL, TimeUnit.SECONDS);
-        return result != null && result;
-    }
-
-    private void unlock(String key) {
-        redisTemplate.delete(key);
     }
 
     @Override
