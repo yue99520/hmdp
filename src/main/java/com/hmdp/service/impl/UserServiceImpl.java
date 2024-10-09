@@ -105,13 +105,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         Map<String, String> userDTOMap = mapper.convertValue(userDTO, new TypeReference<Map<String, String>>() {});
 
         stringRedisTemplate.execute(new SessionCallback<List<Object>>() {
+
             @Override
-            public <K, V> List<Object> execute(RedisOperations<K, V> operations) throws DataAccessException {
+            public <K, V> List<Object> execute(RedisOperations<K, V> redisOperations) throws DataAccessException {
+                StringRedisTemplate operations = (StringRedisTemplate) redisOperations;
                 String key = LOGIN_USER_KEY + token;
-                stringRedisTemplate.multi();
-                stringRedisTemplate.opsForHash().putAll(key, userDTOMap);
-                stringRedisTemplate.expire(key, USER_LOGIN_SESSION_EXPIRATION_SECONDS, TimeUnit.SECONDS);
-                return stringRedisTemplate.exec();
+                operations.multi();
+                operations.opsForHash().putAll(key, userDTOMap);
+                operations.expire(key, USER_LOGIN_SESSION_EXPIRATION_SECONDS, TimeUnit.SECONDS);
+                return operations.exec();
             }
         });
 
