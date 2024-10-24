@@ -1,7 +1,6 @@
 package com.hmdp.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
@@ -11,10 +10,10 @@ import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.GlobalIDGenerator;
-import com.hmdp.utils.Lock;
-import com.hmdp.utils.SimpleRedisLock;
 import com.hmdp.utils.UserHolder;
 
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -36,6 +35,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private StringRedisTemplate redisTemplate;
 
     @Autowired
+    private RedissonClient redissonClient;
+
+    @Autowired
     private GlobalIDGenerator globalIDGenerator;
 
     @Override
@@ -53,9 +55,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
 
         Long userId = UserHolder.getUser().getId();
-        Lock lock = new SimpleRedisLock(LOCK_ORDER_KEY + ":" + userId, redisTemplate);
+//        Lock lock = new SimpleRedisLock(LOCK_ORDER_KEY + ":" + userId, redisTemplate);
+        RLock rLock = redissonClient.getLock("lock:" + LOCK_ORDER_KEY + userId);
 
-        boolean locked = lock.tryLock( 15);
+//        boolean locked = lock.tryLock( 15);
+        boolean locked = rLock.tryLock();
         if (!locked) {
             return Result.fail("voucher order is processing");
         }
@@ -64,7 +68,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
             return proxy.createVoucherOrder(userId, voucherId);
         } finally {
-            lock.unlock();
+            rLock.unlock();
         }
     }
 
