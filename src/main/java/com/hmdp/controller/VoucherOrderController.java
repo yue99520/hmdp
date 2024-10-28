@@ -5,6 +5,7 @@ import com.hmdp.dto.Result;
 import com.hmdp.service.IVoucherOrderService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +27,11 @@ public class VoucherOrderController {
     IVoucherOrderService voucherOrderService;
 
     @PostMapping("seckill/{id}")
-    public Result seckillVoucher(@PathVariable("id") Long voucherId) {
-        return voucherOrderService.seckillVoucher(voucherId);
+    public ResponseEntity<Result> seckillVoucher(@PathVariable("id") Long voucherId) {
+        Result result = voucherOrderService.seckillVoucher(voucherId);
+        if (!result.getSuccess()) {
+            return ResponseEntity.status(400).body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 }
