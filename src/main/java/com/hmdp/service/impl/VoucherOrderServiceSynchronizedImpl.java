@@ -24,7 +24,7 @@ import static com.hmdp.utils.RedisConstants.LOCK_VOUCHER_ORDER_KEY;
  * @author Ernie Lee
  */
 //@Service
-public class DeprecatedVoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+public class VoucherOrderServiceSynchronizedImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
 
     @Autowired
     private ISeckillVoucherService seckillVoucherService;

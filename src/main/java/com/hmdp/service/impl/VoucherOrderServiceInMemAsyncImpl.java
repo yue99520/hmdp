@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -30,16 +29,12 @@ import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.utils.GlobalIDGenerator;
 import com.hmdp.utils.UserHolder;
 
-import lombok.extern.slf4j.Slf4j;
-
 import static com.hmdp.utils.RedisConstants.LOCK_VOUCHER_ORDER_KEY;
 
 /**
  * @author Ernie Lee
  */
-@Slf4j
-@Service
-public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+public class VoucherOrderServiceInMemAsyncImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
 
     private static final BlockingQueue<VoucherOrder> VOUCHER_ORDER_QUEUE = new ArrayBlockingQueue<>(1024 * 1024);
     private static final ExecutorService SECKILL_VOUCHER_ORDER_EXECUTOR = Executors.newSingleThreadExecutor();
